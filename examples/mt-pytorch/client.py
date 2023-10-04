@@ -25,7 +25,7 @@ class FlowerClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         set_parameters(net, parameters)
-        results = train(net, trainloader, testloader, epochs=1)
+        results = train(net, trainloader, testloader, epochs=1, device=DEVICE)
         return get_parameters(net), len(trainloader.dataset), results
 
     def evaluate(self, parameters, config):
@@ -36,7 +36,7 @@ class FlowerClient(fl.client.NumPyClient):
 
 # Start Flower client
 fl.client.start_numpy_client(
-    server_address="0.0.0.0:9092",
+    server_address="0.0.0.0:9092",  # "0.0.0.0:9093" for REST
     client=FlowerClient(),
-    rest=False,
+    transport="grpc-rere",  # "rest" for REST
 )

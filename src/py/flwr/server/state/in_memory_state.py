@@ -15,6 +15,7 @@
 """In-memory State implementation."""
 
 
+import random
 from datetime import datetime, timedelta
 from logging import ERROR
 from typing import Dict, List, Optional, Set
@@ -31,16 +32,20 @@ class InMemoryState(State):
 
     def __init__(self) -> None:
         self.node_ids: Set[int] = set()
+        self.workload_ids: Set[str] = set()
         self.task_ins_store: Dict[UUID, TaskIns] = {}
         self.task_res_store: Dict[UUID, TaskRes] = {}
 
     def store_task_ins(self, task_ins: TaskIns) -> Optional[UUID]:
         """Store one TaskIns."""
-
         # Validate task
         errors = validate_task_ins_or_res(task_ins)
         if any(errors):
             log(ERROR, errors)
+            return None
+        # Validate workload_id
+        if task_ins.workload_id not in self.workload_ids:
+            log(ERROR, "`workload_id` is invalid")
             return None
 
         # Create task_id, created_at and ttl
@@ -61,7 +66,6 @@ class InMemoryState(State):
         self, node_id: Optional[int], limit: Optional[int]
     ) -> List[TaskIns]:
         """Get all TaskIns that have not been delivered yet."""
-
         if limit is not None and limit < 1:
             raise AssertionError("`limit` must be >= 1")
 
@@ -94,11 +98,15 @@ class InMemoryState(State):
 
     def store_task_res(self, task_res: TaskRes) -> Optional[UUID]:
         """Store one TaskRes."""
-
         # Validate task
         errors = validate_task_ins_or_res(task_res)
         if any(errors):
             log(ERROR, errors)
+            return None
+
+        # Validate workload_id
+        if task_res.workload_id not in self.workload_ids:
+            log(ERROR, "`workload_id` is invalid")
             return None
 
         # Create task_id, created_at and ttl
@@ -117,7 +125,6 @@ class InMemoryState(State):
 
     def get_task_res(self, task_ids: Set[UUID], limit: Optional[int]) -> List[TaskRes]:
         """Get all TaskRes that have not been delivered yet."""
-
         if limit is not None and limit < 1:
             raise AssertionError("`limit` must be >= 1")
 
@@ -142,7 +149,6 @@ class InMemoryState(State):
 
     def delete_tasks(self, task_ids: Set[UUID]) -> None:
         """Delete all delivered TaskIns/TaskRes pairs."""
-
         task_ins_to_be_deleted: Set[UUID] = set()
         task_res_to_be_deleted: Set[UUID] = set()
 
@@ -163,9 +169,17 @@ class InMemoryState(State):
             del self.task_res_store[task_id]
 
     def num_task_ins(self) -> int:
+        """Calculate the number of task_ins in store.
+
+        This includes delivered but not yet deleted task_ins.
+        """
         return len(self.task_ins_store)
 
     def num_task_res(self) -> int:
+        """Calculate the number of task_res in store.
+
+        This includes delivered but not yet deleted task_res.
+        """
         return len(self.task_res_store)
 
     def register_node(self, node_id: int) -> None:
@@ -180,6 +194,26 @@ class InMemoryState(State):
             raise ValueError(f"Node {node_id} is not registered")
         self.node_ids.remove(node_id)
 
-    def get_nodes(self) -> Set[int]:
-        """Return all available client nodes."""
+    def get_nodes(self, workload_id: str) -> Set[int]:
+        """Return all available client nodes.
+
+        Constraints
+        -----------
+        If the provided `workload_id` does not exist or has no matching nodes,
+        an empty `Set` MUST be returned.
+        """
+        if workload_id not in self.workload_ids:
+            return set()
         return self.node_ids
+
+    def create_workload(self) -> str:
+        """Create one workload."""
+        # String representation of random integer from 0 to 9223372036854775807
+        random_workload_id: int = random.randrange(9223372036854775808)
+        workload_id = str(random_workload_id)
+
+        if workload_id not in self.workload_ids:
+            self.workload_ids.add(workload_id)
+            return workload_id
+        log(ERROR, "Unexpected workload creation failure.")
+        return ""
