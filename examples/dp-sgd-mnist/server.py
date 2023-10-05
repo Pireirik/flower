@@ -40,11 +40,8 @@ def main(args) -> None:
         evaluate_fn=get_evaluate_fn(model),
         initial_parameters=fl.common.ndarrays_to_parameters(model.get_weights()),
     )
-    fl.server.start_server(
-        server_address="0.0.0.0:8080",
-        strategy=strategy,
-        config=fl.server.ServerConfig(num_rounds=args.num_rounds),
-    )
+    fl.server.start_server(server_address="0.0.0.0:8080", config=fl.server.ServerConfig(num_rounds=args.num_rounds),
+                           strategy=strategy)
 
 
 if __name__ == "__main__":

@@ -165,11 +165,7 @@ def run(baseline: str, setting: str, adapter: str) -> None:
     log(INFO, "(7/9) Start server.")
     cluster.exec(
         "server",
-        command.start_server(
-            log_host=f"{logserver.private_ip}:8081",
-            baseline=baseline,
-            setting=setting,
-        ),
+        command.start_server(),
     )
 
     # Start Flower clients

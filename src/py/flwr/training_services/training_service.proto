@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+option go_package = ".;training";
+import "google/protobuf/empty.proto";
+package training;
+
+service FederatedLearning {
+    rpc GetHubPort(google.protobuf.Empty) returns (HubPort) {}
+    rpc GetTrainingPort(FlTrainingName) returns (HubPort) {}
+    rpc StartTraining(TrainingParameters) returns (TrainingID) {}
+    rpc BuildTrainingClient(UserTrainingNames) returns (google.protobuf.Empty) {}
+    rpc CreateTraining(NewTraining) returns (google.protobuf.Empty) {}
+    rpc SignClient(ClientSignature) returns (google.protobuf.Empty) {}
+    rpc UpdateModel(ModelUpdated) returns (google.protobuf.Empty) {}
+    rpc GetAllTrainings(google.protobuf.Empty) returns (AllTrainings) {}
+    rpc GetRunningInstanceStatus(FlTrainingName) returns (InstanceState) {}
+    rpc AuthenticateClient(ClientSignature) returns (Signed) {}
+    rpc PullClientImage(FlTrainingName) returns (stream ImageTar) {}
+}
+
+message Error {
+    int32 code = 1;
+    string message = 2;
+}
+
+message InstanceState {
+    string status = 1;
+}
+
+message Scalar {
+    oneof scalar {
+        double float = 1;
+        sint64 int = 2;
+        bool bool = 3;
+        string str = 4;
+    }
+}
+
+message HubPort {
+    int32 port = 1;
+}
+
+message TrainingParameters {
+    UserTrainingNames names = 1;
+    string strategy = 2;
+    repeated string command = 3;
+}
+
+message UserTrainingNames {
+    string username = 1;
+    string training_name = 2;
+}
+
+message FlTrainingName {
+    string name = 1;
+}
+
+message ImageTar {
+    bytes data = 2;
+}
+
+message StrategyParameters {
+    bool accept_failure = 1;
+    float fraction_fit = 2;
+    float fraction_evaluate = 3;
+    float server_learning_rate = 4;
+    float server_momentum = 5;
+    float min_completion_rate_fit = 6;
+    float min_completion_rate_evaluate = 7;
+    float eta = 8;
+    float eta_l = 9;
+    float bate_1 = 10;
+    float bate_2 = 11;
+    float q_param = 12;
+    float qffl_learning_rate = 13;
+    int64 min_fint_clients = 14;
+    int64 min_evaluate_clients = 15;
+    int64 min_available_clients = 16;
+    double tau = 17;
+}
+
+message TrainingParameter {
+    int64 rounds = 1;
+    string strategy = 2;
+    StrategyParameters parameters = 3;
+}
+
+message NewTraining {
+    string training_id = 1;
+    UserTrainingNames names = 2;
+    TrainingParameter training_parameters = 3;
+    ServerInfo training_server = 4;
+    ServerInfo hub_server = 5;
+}
+
+message ServerInfo {
+    int32 port = 1;
+    string ip = 2;
+}
+
+message TrainingID {
+    string id = 1;
+}
+
+message ClientSignature {
+    string id = 1;
+    string name = 2;
+}
+
+message ModelUpdated {
+    string id = 1;
+    string model = 2;
+    int64 round = 3;
+}
+
+message AllTrainings {
+    repeated TrainingResult trainings = 1;
+}
+
+message TrainingResult {
+    string training_id = 1;
+    UserTrainingNames names = 2;
+    TrainingParameter training_parameters = 3;
+}
+
+message Signed {
+    bool success = 1;
+}

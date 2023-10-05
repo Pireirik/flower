@@ -139,11 +139,7 @@ def main() -> None:
         )
 
     # Run server
-    fl.server.start_server(
-        DEFAULT_SERVER_ADDRESS,
-        config={"num_rounds": server_setting.rounds},
-        strategy=strategy,
-    )
+    fl.server.start_server(config={"num_rounds": server_setting.rounds}, strategy=strategy)
 
 
 def get_on_fit_config_fn(

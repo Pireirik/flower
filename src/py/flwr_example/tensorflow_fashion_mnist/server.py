@@ -79,11 +79,7 @@ def main() -> None:
 
     # Configure logger and start server
     fl.common.logger.configure("server", host=args.log_host)
-    fl.server.start_server(
-        args.server_address,
-        config={"num_rounds": args.rounds},
-        strategy=strategy,
-    )
+    fl.server.start_server(config={"num_rounds": args.rounds}, strategy=strategy)
 
 
 def fit_config(server_round: int) -> Dict[str, fl.common.Scalar]:

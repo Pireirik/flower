@@ -67,12 +67,8 @@ def main(cfg: DictConfig) -> None:
             ray_init_args=ray_config,
         )
     else:  # or start server
-        hist = fl.server.app.start_server(
-            server_address=cfg.server_address,
-            server=cfg.server,
-            config=ServerConfig(num_rounds=cfg.num_rounds),
-            strategy=strategy,
-        )
+        hist = fl.server.app.start_server(server_address=cfg.server_address, server=cfg.server,
+                                          config=ServerConfig(num_rounds=cfg.num_rounds), strategy=strategy)
 
     # Plot results
     call(cfg.plot_results, hist=hist)

@@ -62,10 +62,7 @@ def main() -> None:
     )
 
     # Run server
-    fl.server.start_server(
-        config=fl.server.ServerConfig(num_rounds=3),
-        strategy=strategy,
-    )
+    fl.server.start_server(config=fl.server.ServerConfig(num_rounds=3), strategy=strategy)
 
 
 def fit_config(server_round: int) -> Dict[str, fl.common.Scalar]:

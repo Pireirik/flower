@@ -38,6 +38,9 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.history import History
 from flwr.server.strategy import FedAvg, Strategy
 
+from flwr.training_services.training_service_pb2 import ModelUpdated
+from flwr.training_services.training_service_pb2_grpc import FederatedLearningStub
+
 FitResultsAndFailures = Tuple[
     List[Tuple[ClientProxy, FitRes]],
     List[Union[Tuple[ClientProxy, FitRes], BaseException]],
@@ -81,9 +84,10 @@ class Server:
         return self._client_manager
 
     # pylint: disable=too-many-locals
-    def fit(self, num_rounds: int, timeout: Optional[float]) -> History:
+    def fit(self, num_rounds: int, timeout: Optional[float], training_id: str, stub: FederatedLearningStub) -> History:
         """Run federated averaging for a number of rounds."""
         history = History()
+        log(INFO, "training id: %s", training_id)
 
         # Initialize parameters
         log(INFO, "Initializing global parameters")
@@ -99,6 +103,8 @@ class Server:
             )
             history.add_loss_centralized(server_round=0, loss=res[0])
             history.add_metrics_centralized(server_round=0, metrics=res[1])
+
+        self.update_model(server_round=0, training_id=training_id, stub=stub)
 
         # Run federated learning for num_rounds
         log(INFO, "FL starting")
@@ -147,11 +153,26 @@ class Server:
                         server_round=current_round, metrics=evaluate_metrics_fed
                     )
 
+            self.update_model(server_round=current_round, training_id=training_id, stub=stub)
+
         # Bookkeeping
         end_time = timeit.default_timer()
         elapsed = end_time - start_time
         log(INFO, "FL finished in %s", elapsed)
         return history
+
+    def update_model(
+        self,
+        server_round: int,
+        training_id: str,
+        stub: FederatedLearningStub,
+    ) -> None:
+        hash_model = hash(str(self.parameters.tensors))
+        log(INFO, "hash of global paramaters: %d, number of round: %d", hash_model, server_round)
+        try:
+            stub.UpdateModel(ModelUpdated(id=training_id, model=str(hash_model), round=server_round))
+        except Exception as e:
+            log(Warning, "could not update model: %s", e)
 
     def evaluate_round(
         self,

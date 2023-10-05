@@ -54,6 +54,8 @@ from flwr.server.server import Server
 from flwr.server.state import StateFactory
 from flwr.server.strategy import FedAvg, Strategy
 
+from flwr.training_services.training_service_pb2_grpc import FederatedLearningStub
+
 ADDRESS_DRIVER_API = "0.0.0.0:9091"
 ADDRESS_FLEET_API_GRPC_RERE = "0.0.0.0:9092"
 ADDRESS_FLEET_API_GRPC_BIDI = "[::]:8080"  # IPv6 to keep start_server compatible
@@ -83,6 +85,8 @@ def start_server(  # pylint: disable=too-many-arguments,too-many-locals
     client_manager: Optional[ClientManager] = None,
     grpc_max_message_length: int = GRPC_MAX_MESSAGE_LENGTH,
     certificates: Optional[Tuple[bytes, bytes, bytes]] = None,
+    training_id: str = 'unique_id',
+    central_server_addr: str = 'localhost:50051',
 ) -> History:
     """Start a Flower server using the gRPC transport layer.
 
@@ -121,6 +125,10 @@ def start_server(  # pylint: disable=too-many-arguments,too-many-locals
             * CA certificate.
             * server certificate.
             * server private key.
+    training_id : str (default: 'unique_id')
+        training id for update model
+    central_server_addr : str (default: 'localhost:50051')
+        central server address for grpc server
 
     Returns
     -------
@@ -135,13 +143,9 @@ def start_server(  # pylint: disable=too-many-arguments,too-many-locals
 
     Starting an SSL-enabled server:
 
-    >>> start_server(
-    >>>     certificates=(
+    >>> start_server(certificates=(
     >>>         Path("/crts/root.pem").read_bytes(),
     >>>         Path("/crts/localhost.crt").read_bytes(),
-    >>>         Path("/crts/localhost.key").read_bytes()
-    >>>     )
-    >>> )
     """
     event(EventType.START_SERVER_ENTER)
 
@@ -179,16 +183,29 @@ def start_server(  # pylint: disable=too-many-arguments,too-many-locals
         "enabled" if certificates is not None else "disabled",
     )
 
+    channel = grpc.insecure_channel(central_server_addr)
+    stub = FederatedLearningStub(channel)
+
+    log(
+        INFO,
+        "Training id: %s, grpc server addr: %s",
+        training_id,
+        central_server_addr,
+    )
+
     # Start training
     hist = run_fl(
         server=initialized_server,
         config=initialized_config,
+        training_id=training_id,
+        stub=stub,
     )
 
     # Stop the gRPC server
     grpc_server.stop(grace=1)
 
     event(EventType.START_SERVER_LEAVE)
+    channel.close()
 
     return hist
 
@@ -219,9 +236,11 @@ def init_defaults(
 def run_fl(
     server: Server,
     config: ServerConfig,
+    training_id: str,
+    stub: FederatedLearningStub,
 ) -> History:
     """Train a model on the given server and return the History object."""
-    hist = server.fit(num_rounds=config.num_rounds, timeout=config.round_timeout)
+    hist = server.fit(num_rounds=config.num_rounds, timeout=config.round_timeout, training_id=training_id, stub=stub)
     log(INFO, "app_fit: losses_distributed %s", str(hist.losses_distributed))
     log(INFO, "app_fit: metrics_distributed_fit %s", str(hist.metrics_distributed_fit))
     log(INFO, "app_fit: metrics_distributed %s", str(hist.metrics_distributed))

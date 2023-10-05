@@ -116,11 +116,8 @@ def main() -> None:
     server = fl.server.Server(client_manager=client_manager, strategy=strategy)
 
     # Run server
-    fl.server.start_server(
-        server_address=args.server_address,
-        server=server,
-        config=fl.server.ServerConfig(num_rounds=args.rounds),
-    )
+    fl.server.start_server(server_address=args.server_address, server=server,
+                           config=fl.server.ServerConfig(num_rounds=args.rounds))
 
 
 def fit_config(server_round: int) -> Dict[str, fl.common.Scalar]:

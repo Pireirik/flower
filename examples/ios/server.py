@@ -27,11 +27,8 @@ def main(num_clients=1, num_rounds=1) -> None:
     )
 
     # Start Flower server
-    hist = flwr.server.start_server(
-        server_address="[::]:8080",
-        config=flwr.server.ServerConfig(num_rounds=num_rounds),
-        strategy=strategy,
-    )
+    hist = flwr.server.start_server(server_address="[::]:8080", config=flwr.server.ServerConfig(num_rounds=num_rounds),
+                                    strategy=strategy)
     return hist
 
 

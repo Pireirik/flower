@@ -36,8 +36,5 @@ if __name__ == "__main__":
         evaluate_fn=get_evaluate_fn(model),
         on_fit_config_fn=fit_round,
     )
-    fl.server.start_server(
-        server_address="0.0.0.0:8080",
-        strategy=strategy,
-        config=fl.server.ServerConfig(num_rounds=5),
-    )
+    fl.server.start_server(server_address="0.0.0.0:8080", config=fl.server.ServerConfig(num_rounds=5),
+                           strategy=strategy)

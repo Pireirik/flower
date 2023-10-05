@@ -129,7 +129,7 @@ This baseline was created to reproduce the [FedBN implementation available on Gi
 
 This baseline compares Federated Averaging (FedAvg) with Federated Batch Normalization (FedBN). In both cases, we are using FedAvg on the server-side. All model parameters are sent from the client to the server and aggregated. However, in the case of FedBN, we are setting up the client to exclude batch norm layers from the transmission to the server. FedBN is therefore a strategy that only requires changes on the client-side.
 
-The server is kept very simple and remains the same in both settings. We are using FedAvg on the server-side with the parameters `min_fit_clients`, `min_eval_clients`, and `min_available_clients`. All are set to the value `5` since we have five clients to be trained and evaluated in each FL round. All in all, the *FedBN* paper runs 600 FL rounds that can be implemented as follows.     
+The server is kept very simple and remains the same in both settings. We are using FedAvg on the server-side with the parameters `min_fit_clients`, `min_eval_clients`, and `min_available_clients`. All are set to the value `5` since we have five clients to be trained and evaluated in each FL round. All in all, the *FedBN* paper runs 600 FL rounds that can be implemented as follows.
 
 ```python
 import flwr as fl
